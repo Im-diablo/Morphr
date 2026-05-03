@@ -45,11 +45,7 @@ export default function Navbar() {
         >
           <div className="flex items-center justify-between">
             <Link to="/" className="no-underline flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold to-amber flex items-center justify-center">
-                <span className="text-void font-heading font-black text-sm">
-                  M
-                </span>
-              </div>
+              <img src="/logo.svg" alt="Morphr" className="w-9 h-9" />
               <span className="font-heading text-sm sm:text-base font-bold tracking-wide text-gold block">
                 Morphr
               </span>
