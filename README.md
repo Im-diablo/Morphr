@@ -1,112 +1,167 @@
-Morphr
+# Morphr
 
-AI-powered resume tailoring backed by real GitHub data.
+AI-powered resume tailoring backed by real GitHub data
 
 ---
 
-## 1. Title
-
-**Morphr — AI-Powered Resume Tailoring Backed by Real GitHub Data**
-
-## 2. Intro (one paragraph)
-
-Morphr converts your base LaTeX resume into a tailored, ATS-friendly PDF by extracting role requirements from a job description (via Google's Gemini) and grounding each generated bullet with verifiable evidence from your public GitHub repositories.
-
-## 3. Table of Contents
+## Table of Contents
 
 - [Features](#features)
 - [Tech Stack & Prerequisites](#tech-stack--prerequisites)
-- [Architecture Diagram](#architecture-diagram)
+- [Architecture](#architecture)
 - [Project Structure](#project-structure)
 - [User Instructions](#user-instructions)
 - [Developer Instructions](#developer-instructions)
 - [Contributor Expectations](#contributor-expectations)
 - [Known Issues](#known-issues)
-- [License & Credits](#license--credits)
 
-## 4. Features
+---
 
-| Feature               | Purpose                                    | Notes                                            |
-| --------------------- | ------------------------------------------ | ------------------------------------------------ |
-| GitHub grounding      | Map JD skills to your repos                | Produces verifiable bullets with repo references |
-| Gemini-driven rewrite | Extracts and rewrites role-focused bullets | Uses user key locally by default                 |
-| LaTeX compilation     | Generates single-page A4 PDF               | Uses `pdflatex` / `tectonic`                     |
-| Privacy-first         | Keys stored in browser `localStorage`      | Backend doesn't persist user secrets             |
+## Features
 
-## 5. Tech Stack & Prerequisites
+| Feature | Description | Implementation |
+|---------|-------------|----------------|
+| **GitHub Grounding** | Maps job requirements to your repositories | Analyzes repos, READMEs, and code to generate verifiable bullets |
+| **AI-Powered Rewrite** | Tailors resume bullets to job descriptions | Uses Google Gemini to extract skills and rewrite content |
+| **LaTeX Compilation** | Produces ATS-friendly PDF resumes | Compiles modified `.tex` files via `pdflatex` or `tectonic` |
+| **Privacy-First** | No credential storage on backend | API keys stored in browser `localStorage` only |
 
-| Layer       | Stack                                                   |
-| ----------- | ------------------------------------------------------- |
-| Frontend    | React, Vite, Tailwind, Framer Motion, React-Three-Fiber |
-| Backend     | Python 3.9+, Flask, PyGithub, Google Generative AI SDK  |
-| Compilation | `pdflatex` or `tectonic` (system-level)                 |
+---
 
-Prerequisites:
+## Tech Stack & Prerequisites
+
+### Stack
+
+| Component | Technologies |
+|-----------|-------------|
+| **Frontend** | React, Vite, Tailwind CSS, Framer Motion, React-Three-Fiber |
+| **Backend** | Python 3.9+, Flask, PyGithub, Google Generative AI SDK |
+| **Compiler** | `pdflatex` or `tectonic` |
+
+### Prerequisites
 
 - Node.js 18+
 - Python 3.9+
 - LaTeX compiler (`pdflatex` or `tectonic`)
+- Gemini API key
+- GitHub personal access token
 
-## 6. Architecture Diagram
+---
 
-Detailed flow (Mermaid):
+## Architecture
 
 ```mermaid
-flowchart TD
-  subgraph FE[Frontend]
-    UI[User Interface]
-    UI -->|Upload `.tex` + JD| Uploader[Uploader]
-    Uploader -->|POST /api/analyze| API[Backend API]
-  end
+flowchart TB
+    subgraph Client["Frontend (React + Vite)"]
+        UI[User Interface]
+        Settings[Settings Panel]
+        Upload[File Uploader]
+        Preview[PDF Preview]
+    end
 
-  subgraph BE[Backend]
-    API --> C[GitHub Crawler]
-    API --> G[Gemini Adapter]
-    API --> L[LaTeX Compiler]
-    C -->|repo metadata, files| G
-    G -->|rewritten bullets + mapping| API
-    API -->|.tex| L
-    L -->|PDF + logs| API
-  end
+    subgraph API["Backend API (Flask)"]
+        Endpoint["/api/analyze"]
+        Validator[Input Validator]
+        Orchestrator[Processing Orchestrator]
+    end
 
-  API -->|response| UI
+    subgraph Processing["Core Processing Modules"]
+        Crawler[GitHub Crawler]
+        Analyzer[JD Analyzer]
+        Compiler[LaTeX Compiler]
+    end
 
-  %% External services
-  G -->|calls| Gemini[Google Gemini (user key)]
-  C -->|calls| GitHub[GitHub API (user token)]
+    subgraph External["External Services"]
+        GH[GitHub API]
+        Gemini[Google Gemini API]
+    end
 
-  style Gemini fill:#f7f7ff,stroke:#6b7280
-  style GitHub fill:#fff7ed,stroke:#92400e
-  style FE fill:#eef2ff,stroke:#4f46e5
-  style BE fill:#fff1f2,stroke:#db2777
+    subgraph Storage["File System"]
+        Output[resumes/]
+    end
+
+    UI -->|1. Configure| Settings
+    Settings -->|Store keys| LocalStorage[(localStorage)]
+    UI -->|2. Upload .tex + JD| Upload
+    Upload -->|3. POST request| Endpoint
+    
+    Endpoint --> Validator
+    Validator --> Orchestrator
+    
+    Orchestrator -->|4. Fetch repos| Crawler
+    Crawler -->|API call| GH
+    GH -->|Repo data| Crawler
+    
+    Crawler -->|5. Repo metadata| Analyzer
+    Orchestrator -->|Job description| Analyzer
+    Analyzer -->|6. Generate bullets| Gemini
+    Gemini -->|Tailored content| Analyzer
+    
+    Analyzer -->|7. Modified .tex| Compiler
+    Compiler -->|8. Compile| Output
+    Output -->|9. PDF + logs| Compiler
+    
+    Compiler -->|10. Response| Endpoint
+    Endpoint -->|11. Download links| Preview
+    Preview -->|Display| UI
+
+    style Client fill:#e0f2fe,stroke:#0369a1,stroke-width:2px
+    style API fill:#fef3c7,stroke:#d97706,stroke-width:2px
+    style Processing fill:#ddd6fe,stroke:#7c3aed,stroke-width:2px
+    style External fill:#fee2e2,stroke:#dc2626,stroke-width:2px
+    style Storage fill:#d1fae5,stroke:#059669,stroke-width:2px
 ```
 
-Diagram details:
+### Data Flow
 
-- The frontend collects the JD and `.tex` and posts to `/api/analyze`.
-- The backend crawls GitHub (repo list, README, code snippets), prompts Gemini to rewrite bullets, then compiles the modified `.tex` into a PDF.
-- Keys: the frontend stores Gemini/GitHub credentials in `localStorage` by default.
+1. User configures API keys in Settings (stored in browser)
+2. User uploads base `.tex` resume and pastes job description
+3. Frontend sends POST request to `/api/analyze` with credentials
+4. Backend crawls GitHub repositories using provided token
+5. JD Analyzer extracts skills and requirements from job description
+6. Gemini API generates tailored resume bullets with GitHub evidence
+7. LaTeX Compiler processes modified `.tex` file
+8. System outputs PDF and compilation logs
+9. Frontend receives download links for `.tex` and PDF files
 
-## 7. Project Structure
+---
 
-Minimal tree:
+## Project Structure
 
 ```
-backend/
-  main.py
-  github_crawler.py
-  jd_analyzer.py
-  compiler.py
-  resumes/ (outputs: .tex, .pdf, logs)
-frontend/
-  index.html
-  src/ (React app + components)
-README.md
+Morphr/
+├── backend/
+│   ├── resumes/              # Output directory for generated files
+│   │   ├── amazon/           # Company-specific outputs
+│   │   └── google/
+│   ├── main.py               # Flask API entrypoint
+│   ├── github_crawler.py     # GitHub API integration
+│   ├── jd_analyzer.py        # Gemini-powered JD analysis
+│   ├── compiler.py           # LaTeX compilation logic
+│   ├── config.py             # Configuration management
+│   ├── requirements.txt      # Python dependencies
+│   └── .env.example          # Environment template
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── pages/            # Page components
+│   │   ├── App.jsx           # Main app component
+│   │   └── main.jsx          # React entrypoint
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   └── tailwind.config.js
+│
+└── README.md
 ```
 
-## 8. User Instructions
+---
 
-1. Backend (Windows PowerShell):
+## User Instructions
+
+### Backend Setup
 
 ```powershell
 cd backend
@@ -116,7 +171,9 @@ pip install -r requirements.txt
 python main.py
 ```
 
-2. Frontend:
+Backend runs on `http://localhost:5000`
+
+### Frontend Setup
 
 ```powershell
 cd frontend
@@ -124,32 +181,80 @@ npm install
 npm run dev
 ```
 
-3. In the web app: open Settings → paste Gemini API key and GitHub username/token → upload your base `.tex` → paste JD → Generate → download `.tex` and PDF.
+Frontend runs on `http://localhost:5173`
 
-## 9. Developer Instructions
+### Usage Workflow
 
-- Backend entrypoint: `backend/main.py`.
-- Core modules: `backend/github_crawler.py`, `backend/jd_analyzer.py`, `backend/compiler.py`.
-- For local testing, place `GEMINI_API_KEY` and `GITHUB_TOKEN` in a local `.env` (optional).
-- Add unit tests for parsing and prompt-generation logic.
-
-## 10. Contributor Expectations
-
-- Small, focused PRs with clear descriptions.
-- Include tests for new backend logic where applicable.
-- Keep UI changes visually consistent and responsive.
-- Respect privacy design: don't persist user API keys.
-
-## 11. Known Issues
-
-- Large GitHub accounts increase analysis time.
-- Complex LaTeX templates may require manual tweaks; see `backend/resumes/` logs.
-- Rate limiting possible without a fine-grained GitHub token.
-
-## 12. License & Credits
-
-Made with care by BlaZe.
+| Step | Action |
+|------|--------|
+| 1 | Open web app and navigate to Settings |
+| 2 | Enter Gemini API key and GitHub username/token |
+| 3 | Upload your base LaTeX resume (`.tex` file) |
+| 4 | Paste the job description in the text area |
+| 5 | Click "Generate" and wait for processing |
+| 6 | Download the tailored `.tex` and PDF files |
 
 ---
 
-If you'd like, I can render the Mermaid diagram to a PNG and add it to the repo.
+## Developer Instructions
+
+### Backend Architecture
+
+| Module | Purpose | Key Functions |
+|--------|---------|---------------|
+| `main.py` | API server and routing | `/api/analyze`, `/api/health` |
+| `github_crawler.py` | Repository data extraction | `fetch_repos()`, `analyze_repo()` |
+| `jd_analyzer.py` | AI-powered content generation | `extract_skills()`, `generate_bullets()` |
+| `compiler.py` | LaTeX to PDF conversion | `compile_latex()`, `validate_output()` |
+
+### Local Development
+
+1. Create `.env` file in `backend/` (optional):
+   ```
+   GEMINI_API_KEY=your_key_here
+   GITHUB_TOKEN=your_token_here
+   ```
+
+2. Run tests:
+   ```powershell
+   pytest backend/tests/
+   ```
+
+3. Frontend development:
+   ```powershell
+   npm run dev
+   ```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/analyze` | POST | Process resume with JD and GitHub data |
+| `/api/health` | GET | Health check |
+
+---
+
+## Contributor Expectations
+
+| Area | Guidelines |
+|------|-----------|
+| **Pull Requests** | Small, focused changes with clear descriptions |
+| **Testing** | Include unit tests for new backend logic |
+| **UI/UX** | Maintain visual consistency and responsiveness |
+| **Privacy** | Never persist user API keys or credentials |
+| **Code Style** | Follow existing patterns and linting rules |
+
+---
+
+## Known Issues
+
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| Large GitHub accounts | Increased processing time | Use fine-grained tokens with repo-only access |
+| Complex LaTeX templates | Compilation failures | Check `backend/resumes/` logs for errors |
+| GitHub rate limiting | API throttling | Authenticate with personal access token |
+| Multi-page resumes | ATS compatibility issues | Ensure base template fits single page |
+
+---
+
+Made with 💗 by BlaZe

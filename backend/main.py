@@ -56,6 +56,12 @@ def health_check():
     return jsonify({"status": "ok", "github": github_ok, "gemini": gemini_ok})
 
 
+@app.route("/ping", methods=["GET"])
+def ping():
+    """Simple ping endpoint for Uptime Robot and Render."""
+    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()}), 200
+
+
 @app.route("/api/projects", methods=["GET"])
 def get_projects():
     token = _get_key("x-github-token", GITHUB_TOKEN)
