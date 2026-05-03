@@ -1,82 +1,151 @@
+<div align="center">
+
 # Morphr
 
-AI-powered resume tailoring backed by real GitHub data
+### AI-powered resume tailoring backed by real GitHub data
+
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Documentation](#-documentation)
+
+</div>
 
 ---
 
-## Table of Contents
+## 📋 Table of Contents
 
-- [Features](#features)
-- [Tech Stack & Prerequisites](#tech-stack--prerequisites)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [User Instructions](#user-instructions)
-- [Developer Instructions](#developer-instructions)
-- [Contributor Expectations](#contributor-expectations)
-- [Known Issues](#known-issues)
-
----
-
-## Features
-
-| Feature | Description | Implementation |
-|---------|-------------|----------------|
-| **GitHub Grounding** | Maps job requirements to your repositories | Analyzes repos, READMEs, and code to generate verifiable bullets |
-| **AI-Powered Rewrite** | Tailors resume bullets to job descriptions | Uses Google Gemini to extract skills and rewrite content |
-| **LaTeX Compilation** | Produces ATS-friendly PDF resumes | Compiles modified `.tex` files via `pdflatex` or `tectonic` |
-| **Privacy-First** | No credential storage on backend | API keys stored in browser `localStorage` only |
+- [✨ Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [🏗️ Architecture](#️-architecture)
+- [📁 Project Structure](#-project-structure)
+- [📖 User Guide](#-user-guide)
+- [👨‍💻 Developer Guide](#-developer-guide)
+- [🤝 Contributing](#-contributing)
+- [⚠️ Known Issues](#️-known-issues)
 
 ---
 
-## Tech Stack & Prerequisites
+## ✨ Features
 
-### Stack
+<table>
+<tr>
+<td width="50%">
 
-| Component | Technologies |
-|-----------|-------------|
-| **Frontend** | React, Vite, Tailwind CSS, Framer Motion, React-Three-Fiber |
-| **Backend** | Python 3.9+, Flask, PyGithub, Google Generative AI SDK |
-| **Compiler** | `pdflatex` or `tectonic` |
+### 🔗 GitHub Grounding
+Maps job requirements to your repositories by analyzing repos, READMEs, and code to generate verifiable bullets
+
+</td>
+<td width="50%">
+
+### 🤖 AI-Powered Rewrite
+Tailors resume bullets to job descriptions using Google Gemini to extract skills and rewrite content
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 📄 LaTeX Compilation
+Produces ATS-friendly PDF resumes by compiling modified `.tex` files via `pdflatex` or `tectonic`
+
+</td>
+<td width="50%">
+
+### 🔒 Privacy-First
+No credential storage on backend - API keys stored in browser `localStorage` only
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.9+
-- LaTeX compiler (`pdflatex` or `tectonic`)
-- Gemini API key
-- GitHub personal access token
+```bash
+Node.js 18+  |  Python 3.9+  |  LaTeX (pdflatex/tectonic)
+```
+
+### Installation
+
+**Backend**
+```powershell
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+> 🌐 Backend runs on `http://localhost:8000`
+
+**Frontend**
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+> 🌐 Frontend runs on `http://localhost:5173`
 
 ---
 
-## Architecture
+## 🛠️ Tech Stack
+
+<div align="center">
+
+| Layer | Technologies |
+|:-----:|:------------|
+| **Frontend** | ![React](https://img.shields.io/badge/-React-61DAFB?style=flat-square&logo=react&logoColor=black) ![Vite](https://img.shields.io/badge/-Vite-646CFF?style=flat-square&logo=vite&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/-Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) ![Framer](https://img.shields.io/badge/-Framer-0055FF?style=flat-square&logo=framer&logoColor=white) |
+| **Backend** | ![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white) ![Flask](https://img.shields.io/badge/-Flask-000000?style=flat-square&logo=flask&logoColor=white) ![PyGithub](https://img.shields.io/badge/-PyGithub-181717?style=flat-square&logo=github&logoColor=white) |
+| **AI/ML** | ![Google Gemini](https://img.shields.io/badge/-Gemini-8E75B2?style=flat-square&logo=google&logoColor=white) |
+| **Compiler** | ![LaTeX](https://img.shields.io/badge/-LaTeX-008080?style=flat-square&logo=latex&logoColor=white) |
+
+</div>
+
+### Required API Keys
+
+- 🔑 **Gemini API Key** - [Get it here](https://makersuite.google.com/app/apikey)
+- 🔑 **GitHub Personal Access Token** - [Generate here](https://github.com/settings/tokens)
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Client["Frontend (React + Vite)"]
+    subgraph Client["🖥️ Frontend (React + Vite)"]
         UI[User Interface]
-        Settings[Settings Panel]
-        Upload[File Uploader]
-        Preview[PDF Preview]
+        Settings[⚙️ Settings Panel]
+        Upload[📤 File Uploader]
+        Preview[👁️ PDF Preview]
     end
 
-    subgraph API["Backend API (Flask)"]
+    subgraph API["⚡ Backend API (Flask)"]
         Endpoint["/api/analyze"]
-        Validator[Input Validator]
-        Orchestrator[Processing Orchestrator]
+        Validator[✅ Input Validator]
+        Orchestrator[🎯 Processing Orchestrator]
     end
 
-    subgraph Processing["Core Processing Modules"]
-        Crawler[GitHub Crawler]
-        Analyzer[JD Analyzer]
-        Compiler[LaTeX Compiler]
+    subgraph Processing["🔧 Core Processing Modules"]
+        Crawler[🕷️ GitHub Crawler]
+        Analyzer[🧠 JD Analyzer]
+        Compiler[📝 LaTeX Compiler]
     end
 
-    subgraph External["External Services"]
+    subgraph External["🌐 External Services"]
         GH[GitHub API]
         Gemini[Google Gemini API]
     end
 
-    subgraph Storage["File System"]
+    subgraph Storage["💾 File System"]
         Output[resumes/]
     end
 
@@ -112,149 +181,176 @@ flowchart TB
     style Storage fill:#d1fae5,stroke:#059669,stroke-width:2px
 ```
 
-### Data Flow
+### 🔄 Data Flow
 
-1. User configures API keys in Settings (stored in browser)
-2. User uploads base `.tex` resume and pastes job description
-3. Frontend sends POST request to `/api/analyze` with credentials
-4. Backend crawls GitHub repositories using provided token
-5. JD Analyzer extracts skills and requirements from job description
-6. Gemini API generates tailored resume bullets with GitHub evidence
-7. LaTeX Compiler processes modified `.tex` file
-8. System outputs PDF and compilation logs
-9. Frontend receives download links for `.tex` and PDF files
+| Step | Process |
+|:----:|:--------|
+| **1** | User configures API keys in Settings (stored in browser) |
+| **2** | User uploads base `.tex` resume and pastes job description |
+| **3** | Frontend sends POST request to `/api/analyze` with credentials |
+| **4** | Backend crawls GitHub repositories using provided token |
+| **5** | JD Analyzer extracts skills and requirements from job description |
+| **6** | Gemini API generates tailored resume bullets with GitHub evidence |
+| **7** | LaTeX Compiler processes modified `.tex` file |
+| **8** | System outputs PDF and compilation logs |
+| **9** | Frontend receives download links for `.tex` and PDF files |
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 Morphr/
-├── backend/
-│   ├── resumes/              # Output directory for generated files
-│   │   ├── amazon/           # Company-specific outputs
+├── 🔧 backend/
+│   ├── 📂 resumes/              # Output directory for generated files
+│   │   ├── amazon/              # Company-specific outputs
 │   │   └── google/
-│   ├── main.py               # Flask API entrypoint
-│   ├── github_crawler.py     # GitHub API integration
-│   ├── jd_analyzer.py        # Gemini-powered JD analysis
-│   ├── compiler.py           # LaTeX compilation logic
-│   ├── config.py             # Configuration management
-│   ├── requirements.txt      # Python dependencies
-│   └── .env.example          # Environment template
+│   ├── 🚀 main.py               # Flask API entrypoint
+│   ├── 🕷️ github_crawler.py     # GitHub API integration
+│   ├── 🧠 jd_analyzer.py        # Gemini-powered JD analysis
+│   ├── 📝 compiler.py           # LaTeX compilation logic
+│   ├── ⚙️ config.py             # Configuration management
+│   ├── 📦 requirements.txt      # Python dependencies
+│   └── 📄 .env.example          # Environment template
 │
-├── frontend/
-│   ├── src/
-│   │   ├── components/       # React components
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── pages/            # Page components
-│   │   ├── App.jsx           # Main app component
-│   │   └── main.jsx          # React entrypoint
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.js
+├── 🎨 frontend/
+│   ├── 📂 src/
+│   │   ├── components/          # React components
+│   │   ├── hooks/               # Custom React hooks
+│   │   ├── pages/               # Page components
+│   │   ├── App.jsx              # Main app component
+│   │   └── main.jsx             # React entrypoint
+│   ├── 🌐 index.html
+│   ├── 📦 package.json
+│   ├── ⚡ vite.config.js
+│   └── 🎨 tailwind.config.js
 │
-└── README.md
+└── 📖 README.md
 ```
 
 ---
 
-## User Instructions
+## 📖 User Guide
 
-### Backend Setup
+### 🎯 Usage Workflow
 
-```powershell
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-```
+<div align="center">
 
-Backend runs on `http://localhost:5000`
+| Step | Action | Details |
+|:----:|:-------|:--------|
+| **1** | 🔧 **Configure Settings** | Open web app → Navigate to Settings |
+| **2** | 🔑 **Add Credentials** | Enter Gemini API key and GitHub username/token |
+| **3** | 📤 **Upload Resume** | Upload your base LaTeX resume (`.tex` file) |
+| **4** | 📋 **Paste Job Description** | Paste the job description in the text area |
+| **5** | ⚡ **Generate** | Click "Generate" and wait for processing |
+| **6** | 📥 **Download** | Download the tailored `.tex` and PDF files |
 
-### Frontend Setup
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend runs on `http://localhost:5173`
-
-### Usage Workflow
-
-| Step | Action |
-|------|--------|
-| 1 | Open web app and navigate to Settings |
-| 2 | Enter Gemini API key and GitHub username/token |
-| 3 | Upload your base LaTeX resume (`.tex` file) |
-| 4 | Paste the job description in the text area |
-| 5 | Click "Generate" and wait for processing |
-| 6 | Download the tailored `.tex` and PDF files |
-
+</div>
 ---
 
-## Developer Instructions
+## 👨‍💻 Developer Guide
 
-### Backend Architecture
+### 🏗️ Backend Architecture
 
 | Module | Purpose | Key Functions |
-|--------|---------|---------------|
-| `main.py` | API server and routing | `/api/analyze`, `/api/health` |
+|:-------|:--------|:--------------|
+| `main.py` | API server and routing | `/api/analyze`, `/api/health`, `/ping` |
 | `github_crawler.py` | Repository data extraction | `fetch_repos()`, `analyze_repo()` |
 | `jd_analyzer.py` | AI-powered content generation | `extract_skills()`, `generate_bullets()` |
 | `compiler.py` | LaTeX to PDF conversion | `compile_latex()`, `validate_output()` |
 
-### Local Development
+### 🔧 Local Development
 
-1. Create `.env` file in `backend/` (optional):
-   ```
-   GEMINI_API_KEY=your_key_here
-   GITHUB_TOKEN=your_token_here
-   ```
+**1. Environment Setup**
 
-2. Run tests:
-   ```powershell
-   pytest backend/tests/
-   ```
+Create `.env` file in `backend/` (optional):
+```env
+GEMINI_API_KEY=your_key_here
+GITHUB_TOKEN=your_token_here
+```
 
-3. Frontend development:
-   ```powershell
-   npm run dev
-   ```
+**2. Run Tests**
+```powershell
+pytest backend/tests/
+```
 
-### API Endpoints
+**3. Frontend Development**
+```powershell
+npm run dev
+```
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/analyze` | POST | Process resume with JD and GitHub data |
-| `/api/health` | GET | Health check |
+### 🌐 API Endpoints
 
----
-
-## Contributor Expectations
-
-| Area | Guidelines |
-|------|-----------|
-| **Pull Requests** | Small, focused changes with clear descriptions |
-| **Testing** | Include unit tests for new backend logic |
-| **UI/UX** | Maintain visual consistency and responsiveness |
-| **Privacy** | Never persist user API keys or credentials |
-| **Code Style** | Follow existing patterns and linting rules |
+| Endpoint | Method | Description | Status |
+|:---------|:------:|:------------|:------:|
+| `/api/analyze` | POST | Process resume with JD and GitHub data | ✅ |
+| `/api/health` | GET | Health check with service validation | ✅ |
+| `/ping` | GET | Simple uptime monitoring | ✅ |
+| `/api/projects` | GET | Fetch GitHub projects | ✅ |
+| `/api/upload-resume` | POST | Upload base resume | ✅ |
+| `/api/download/<folder>/<file>` | GET | Download generated files | ✅ |
+| `/api/history` | GET | Get generation history | ✅ |
 
 ---
 
-## Known Issues
+## 🤝 Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+<table>
+<tr>
+<td width="50%">
+
+### 📝 Pull Requests
+- Small, focused changes
+- Clear descriptions
+- Link related issues
+
+</td>
+<td width="50%">
+
+### 🧪 Testing
+- Include unit tests
+- Test edge cases
+- Maintain coverage
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🎨 UI/UX
+- Visual consistency
+- Responsive design
+- Accessibility compliance
+
+</td>
+<td width="50%">
+
+### 🔒 Privacy
+- No credential persistence
+- Secure data handling
+- Follow best practices
+
+</td>
+</tr>
+</table>
+
+---
+
+## ⚠️ Known Issues
 
 | Issue | Impact | Workaround |
-|-------|--------|------------|
-| Large GitHub accounts | Increased processing time | Use fine-grained tokens with repo-only access |
-| Complex LaTeX templates | Compilation failures | Check `backend/resumes/` logs for errors |
-| GitHub rate limiting | API throttling | Authenticate with personal access token |
-| Multi-page resumes | ATS compatibility issues | Ensure base template fits single page |
+|:------|:------:|:-----------|
+| 🐌 Large GitHub accounts | Increased processing time | Use fine-grained tokens with repo-only access |
+| 📄 Complex LaTeX templates | Compilation failures | Check `backend/resumes/` logs for errors |
+| ⏱️ GitHub rate limiting | API throttling | Authenticate with personal access token |
+| 📑 Multi-page resumes | ATS compatibility issues | Ensure base template fits single page |
 
 ---
 
-Made with 💗 by BlaZe
+<div align="center">
+
+### Made with 💗 by [BlaZe](https://github.com/BlaZe)
+
+</div>
