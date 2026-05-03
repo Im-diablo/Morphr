@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 export default function SettingsPage() {
   const [geminiKey, setGeminiKey] = useState('')
   const [githubUsername, setGithubUsername] = useState('')
@@ -34,7 +36,7 @@ export default function SettingsPage() {
   const testConnection = async () => {
     setHealth('testing')
     try {
-      const res = await fetch('/api/health', {
+      const res = await fetch(`${API_BASE_URL}/api/health`, {
         headers: {
           'x-gemini-key': geminiKey,
           'x-github-token': githubToken,
