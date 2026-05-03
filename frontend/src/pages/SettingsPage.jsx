@@ -36,16 +36,21 @@ export default function SettingsPage() {
   const testConnection = async () => {
     setHealth('testing')
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
       const res = await fetch(`${API_BASE_URL}/api/health`, {
         headers: {
           'x-gemini-key': geminiKey,
           'x-github-token': githubToken,
           'x-github-username': githubUsername,
         },
+        signal: controller.signal
       })
+      clearTimeout(timeoutId)
       const data = await res.json()
       setHealth(data)
-    } catch {
+    } catch (err) {
       setHealth({ status: 'error', github: false, gemini: false })
     }
   }
