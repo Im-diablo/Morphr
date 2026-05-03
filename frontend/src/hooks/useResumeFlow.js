@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react'
 import axios from 'axios'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 /**
  * Custom hook — reads API keys from localStorage, sends as headers.
  */
@@ -33,7 +35,7 @@ export default function useResumeFlow() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      await axios.post('/api/upload-resume', formData, {
+      await axios.post(`${API_BASE_URL}/api/upload-resume`, formData, {
         headers: { 'Content-Type': 'multipart/form-data', ...getHeaders() },
       })
       setResumeFile(file)
@@ -63,7 +65,7 @@ export default function useResumeFlow() {
     const timers = phases.map(({ msg, delay }) => setTimeout(() => addLog(msg, 'info'), delay))
 
     try {
-      const response = await axios.post('/api/analyze', { jd, company }, { headers: getHeaders() })
+      const response = await axios.post(`${API_BASE_URL}/api/analyze`, { jd, company }, { headers: getHeaders() })
       timers.forEach(clearTimeout)
       setResult(response.data)
       addLog(`Analysis complete — Match score: ${response.data.match_score}%`, 'success')
