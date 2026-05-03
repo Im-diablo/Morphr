@@ -37,7 +37,7 @@ export default function SettingsPage() {
     setHealth('testing')
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 second timeout
       
       const res = await fetch(`${API_BASE_URL}/api/health`, {
         headers: {
@@ -51,6 +51,7 @@ export default function SettingsPage() {
       const data = await res.json()
       setHealth(data)
     } catch (err) {
+      console.error('Health check error:', err)
       setHealth({ status: 'error', github: false, gemini: false })
     }
   }

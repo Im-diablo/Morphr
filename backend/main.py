@@ -43,18 +43,18 @@ def health_check():
         try:
             from github import Github, Auth
             if token:
-                g = Github(auth=Auth.Token(token), retry=0, timeout=5)
+                g = Github(auth=Auth.Token(token), per_page=1, timeout=3)
             else:
-                g = Github(retry=0, timeout=5)
+                g = Github(per_page=1, timeout=3)
             user = g.get_user(username)
-            _ = user.id
+            _ = user.login
             github_ok = True
         except Exception as e:
             # If no token provided, still mark as OK if username exists
             if not token:
                 try:
                     from github import Github
-                    g = Github(timeout=5)
+                    g = Github(per_page=1, timeout=3)
                     user = g.get_user(username)
                     _ = user.login
                     github_ok = True
