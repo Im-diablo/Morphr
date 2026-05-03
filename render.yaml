@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: morphr-backend
+    runtime: python
+    buildCommand: |
+      apt-get update && apt-get install -y texlive-latex-base texlive-latex-extra
+      pip install -r backend/requirements.txt
+    startCommand: cd backend && python main.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: PORT
+        value: 8000
