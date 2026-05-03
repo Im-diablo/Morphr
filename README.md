@@ -1,140 +1,155 @@
-<div align="center">
-  
-# ✦ Morphr ✦
-**AI-Powered Resume Tailoring Backed by Real GitHub Data**
+Morphr
 
-[![React](https://img.shields.io/badge/React-18-blue.svg?style=for-the-badge&logo=react)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5-purple.svg?style=for-the-badge&logo=vite)](https://vitejs.dev/)
-[![Flask](https://img.shields.io/badge/Flask-API-black.svg?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
-[![Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-orange.svg?style=for-the-badge&logo=google)](https://aistudio.google.com/)
-
-[Features](#features) • [How It Works](#how-it-works) • [Installation](#installation) • [Architecture](#architecture)
-
-</div>
-
-<br/>
-
-Morphr takes your base LaTeX resume template, analyzes a target Job Description using **Google's Gemini 2.5 Flash**, cross-references your real **GitHub repositories**, and generates a tailored, ATS-friendly PDF in seconds.
-
-No hallucinations, no generic fluff. Every bullet point is backed by actual data from your public repositories.
+AI-powered resume tailoring backed by real GitHub data.
 
 ---
 
-## ✨ Features
+## 1. Title
 
-- **Liquid Glass Frontend**: Glassmorphism cards, capsule navbar, scroll-reactive motion, and a visual style inspired by modern liquid UI systems.
-- **Terminal Boot Screen**: A lightweight terminal-themed startup screen adds polish without introducing a heavy loading system.
-- **Mobile-Friendly by Design**: 3D hero/scenes are reduced on smaller screens so the UI stays usable and lighter on phones.
-- **Smart GitHub Sync**: Automatically fetches your public repositories, languages, and project data to build verifiable resume content.
-- **Bring Your Own Key (BYOK)**: Privacy-first architecture. Your Gemini API key and GitHub tokens are stored in the browser's `localStorage` and never hit a database.
-- **One-Page Resume Guard**: The backend prompt and LaTeX template are tuned to keep generated resumes within a single A4 page.
-- **LaTeX Compilation Pipeline**: Server-side `.tex` compilation via Python, returning a PDF ready for submission.
+**Morphr — AI-Powered Resume Tailoring Backed by Real GitHub Data**
 
-## 🚀 How It Works
+## 2. Intro (one paragraph)
 
-1. **Upload Resume**: Drop your base `.tex` template into the app.
-2. **Paste Job Description**: Provide the company name and target role description.
-3. **AI Morphing**: Gemini extracts key technical requirements and maps them to your GitHub projects.
-4. **Download**: Receive both the modified `.tex` source and the compiled `PDF`.
-5. **Navigate the App**: The app page keeps the same landing-style navbar and supports section jumps back to the landing page.
+Morphr converts your base LaTeX resume into a tailored, ATS-friendly PDF by extracting role requirements from a job description (via Google's Gemini) and grounding each generated bullet with verifiable evidence from your public GitHub repositories.
 
-## 🛠️ Tech Stack
+## 3. Table of Contents
 
-- **Frontend**: React, Vite, Tailwind CSS, Framer Motion, Lenis Scroll, React Three Fiber for the hero/background scenes.
-- **Backend**: Python 3, Flask, PyGithub for repository crawling, Google Generative AI SDK.
-- **Compilation**: `pdflatex` / `tectonic`.
+- [Features](#features)
+- [Tech Stack & Prerequisites](#tech-stack--prerequisites)
+- [Architecture Diagram](#architecture-diagram)
+- [Project Structure](#project-structure)
+- [User Instructions](#user-instructions)
+- [Developer Instructions](#developer-instructions)
+- [Contributor Expectations](#contributor-expectations)
+- [Known Issues](#known-issues)
+- [License & Credits](#license--credits)
 
-## 📦 Installation & Setup
+## 4. Features
 
-### Prerequisites
+| Feature               | Purpose                                    | Notes                                            |
+| --------------------- | ------------------------------------------ | ------------------------------------------------ |
+| GitHub grounding      | Map JD skills to your repos                | Produces verifiable bullets with repo references |
+| Gemini-driven rewrite | Extracts and rewrites role-focused bullets | Uses user key locally by default                 |
+| LaTeX compilation     | Generates single-page A4 PDF               | Uses `pdflatex` / `tectonic`                     |
+| Privacy-first         | Keys stored in browser `localStorage`      | Backend doesn't persist user secrets             |
 
-- Python 3.9+
+## 5. Tech Stack & Prerequisites
+
+| Layer       | Stack                                                   |
+| ----------- | ------------------------------------------------------- |
+| Frontend    | React, Vite, Tailwind, Framer Motion, React-Three-Fiber |
+| Backend     | Python 3.9+, Flask, PyGithub, Google Generative AI SDK  |
+| Compilation | `pdflatex` or `tectonic` (system-level)                 |
+
+Prerequisites:
+
 - Node.js 18+
-- A LaTeX compiler installed on your system (e.g., `pdflatex` or `tectonic`).
+- Python 3.9+
+- LaTeX compiler (`pdflatex` or `tectonic`)
 
-### 1. Clone the repository
+## 6. Architecture Diagram
 
-```bash
-git clone https://github.com/yourusername/morphr.git
-cd morphr
+Detailed flow (Mermaid):
+
+```mermaid
+flowchart TD
+  subgraph FE[Frontend]
+    UI[User Interface]
+    UI -->|Upload `.tex` + JD| Uploader[Uploader]
+    Uploader -->|POST /api/analyze| API[Backend API]
+  end
+
+  subgraph BE[Backend]
+    API --> C[GitHub Crawler]
+    API --> G[Gemini Adapter]
+    API --> L[LaTeX Compiler]
+    C -->|repo metadata, files| G
+    G -->|rewritten bullets + mapping| API
+    API -->|.tex| L
+    L -->|PDF + logs| API
+  end
+
+  API -->|response| UI
+
+  %% External services
+  G -->|calls| Gemini[Google Gemini (user key)]
+  C -->|calls| GitHub[GitHub API (user token)]
+
+  style Gemini fill:#f7f7ff,stroke:#6b7280
+  style GitHub fill:#fff7ed,stroke:#92400e
+  style FE fill:#eef2ff,stroke:#4f46e5
+  style BE fill:#fff1f2,stroke:#db2777
 ```
 
-### 2. Backend Setup
+Diagram details:
 
-```bash
+- The frontend collects the JD and `.tex` and posts to `/api/analyze`.
+- The backend crawls GitHub (repo list, README, code snippets), prompts Gemini to rewrite bullets, then compiles the modified `.tex` into a PDF.
+- Keys: the frontend stores Gemini/GitHub credentials in `localStorage` by default.
+
+## 7. Project Structure
+
+Minimal tree:
+
+```
+backend/
+  main.py
+  github_crawler.py
+  jd_analyzer.py
+  compiler.py
+  resumes/ (outputs: .tex, .pdf, logs)
+frontend/
+  index.html
+  src/ (React app + components)
+README.md
+```
+
+## 8. User Instructions
+
+1. Backend (Windows PowerShell):
+
+```powershell
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-_(Optional)_ Create a `.env` file in the `backend` directory if you wish to set default keys for local development (otherwise, enter them in the frontend Settings page).
-
-```env
-GEMINI_API_KEY=your_key_here
-GITHUB_TOKEN=your_github_token_here
-```
-
-Run the Flask server:
-
-```bash
 python main.py
 ```
 
-### 3. Frontend Setup
+2. Frontend:
 
-```bash
-cd ../frontend
+```powershell
+cd frontend
 npm install
 npm run dev
 ```
 
-Navigate to `http://localhost:5173`.
+3. In the web app: open Settings → paste Gemini API key and GitHub username/token → upload your base `.tex` → paste JD → Generate → download `.tex` and PDF.
 
-### 4. App Configuration
+## 9. Developer Instructions
 
-1. Go to the **Settings** page (`/settings`).
-2. Input your **Gemini API Key** (Free at Google AI Studio).
-3. Input your **GitHub Username**.
-4. _(Optional but recommended)_ Input a GitHub Fine-Grained Token to avoid rate limits.
+- Backend entrypoint: `backend/main.py`.
+- Core modules: `backend/github_crawler.py`, `backend/jd_analyzer.py`, `backend/compiler.py`.
+- For local testing, place `GEMINI_API_KEY` and `GITHUB_TOKEN` in a local `.env` (optional).
+- Add unit tests for parsing and prompt-generation logic.
 
-### 5. What to Expect
+## 10. Contributor Expectations
 
-- The landing page opens with a short terminal-style boot screen.
-- The home hero is the default refresh target.
-- On mobile, the visual effects are reduced so the app stays responsive.
-- Generated resumes are constrained to a single A4 page as much as possible.
+- Small, focused PRs with clear descriptions.
+- Include tests for new backend logic where applicable.
+- Keep UI changes visually consistent and responsive.
+- Respect privacy design: don't persist user API keys.
 
----
+## 11. Known Issues
 
-## 📁 Project Structure
+- Large GitHub accounts increase analysis time.
+- Complex LaTeX templates may require manual tweaks; see `backend/resumes/` logs.
+- Rate limiting possible without a fine-grained GitHub token.
 
-- `backend/`: Flask API, GitHub crawling, Gemini analysis, and LaTeX compilation.
-- `frontend/`: React app with the landing page, app workflow, settings page, and liquid-glass UI.
-- `backend/resumes/`: Generated `.tex` files, PDFs, and metadata organized by company slug.
+## 12. License & Credits
 
----
-
-## 🔌 API Endpoints
-
-- `GET /api/health` - checks GitHub and Gemini availability.
-- `GET /api/projects` - fetches GitHub projects for the configured user.
-- `POST /api/upload-resume` - stores the base LaTeX resume.
-- `POST /api/analyze` - analyzes the JD, rewrites the resume, and compiles the PDF.
-- `GET /api/history` - lists previously generated resumes.
+Made with care by BlaZe.
 
 ---
 
-## 🧱 Architecture
-
-- **Frontend shell**: React + Vite app with liquid-glass styling, route transitions, and a lightweight terminal boot overlay.
-- **Resume workflow**: Landing page, app workflow, and settings page are all routed through React Router.
-- **Visual rendering**: 3D scenes are used for polish on desktop and reduced on mobile for better performance.
-- **Backend pipeline**: Flask accepts the JD, crawls GitHub data, asks Gemini to rewrite the resume, then compiles LaTeX into PDF.
-- **Output safety**: The template and prompt are tuned to keep generated resumes compact and close to a single page.
-
----
-
-<div align="center">
-  <p>Made With 💗 by BlaZe.</p>
-</div>
+If you'd like, I can render the Mermaid diagram to a PNG and add it to the repo.
