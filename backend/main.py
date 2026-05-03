@@ -43,14 +43,23 @@ def health_check():
         try:
             from github import Github, Auth
             if token:
-                g = Github(auth=Auth.Token(token), retry=0)
+                g = Github(auth=Auth.Token(token), retry=0, timeout=5)
             else:
-                g = Github(retry=0)
+                g = Github(retry=0, timeout=5)
             user = g.get_user(username)
             _ = user.id
             github_ok = True
-        except Exception:
-            pass
+        except Exception as e:
+            # If no token provided, still mark as OK if username exists
+            if not token:
+                try:
+                    from github import Github
+                    g = Github(timeout=5)
+                    user = g.get_user(username)
+                    _ = user.login
+                    github_ok = True
+                except:
+                    pass
 
     gemini_ok = bool(gemini_key and len(gemini_key) > 10)
     return jsonify({"status": "ok", "github": github_ok, "gemini": gemini_ok})
