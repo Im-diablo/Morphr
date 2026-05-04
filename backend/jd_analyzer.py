@@ -8,6 +8,7 @@ before being written to disk or compiled.
 
 import json
 import re
+import time
 import logging
 from google import genai
 from google.genai import types
@@ -113,7 +114,6 @@ def analyze_and_edit(jd: str, projects: list, resume_tex: str, api_key: str = No
             "No markdown fences. No explanation."
         ),
         temperature=0.2,
-        max_output_tokens=8192,  # Analysis JSON needs room for projects + keywords
     )
 
     projects_summary = json.dumps(projects, indent=2, default=str)
@@ -138,12 +138,26 @@ Return a JSON object with exactly this structure:
 
 Sort matched_projects by score descending. Include at most 6 projects."""
 
-    analysis_response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=analysis_prompt,
-        config=analysis_config,
-    )
-    analysis_text = analysis_response.text.strip()
+    def _call_gemini(prompt, config, retries=3):
+        """Call Gemini with automatic retry on transient ServerErrors."""
+        for attempt in range(retries):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=config,
+                )
+                return response.text.strip()
+            except Exception as e:
+                if "ServerError" in type(e).__name__ or "500" in str(e):
+                    if attempt < retries - 1:
+                        wait = 2 ** (attempt + 1)  # 2s, 4s, 8s
+                        logger.warning("Gemini ServerError (attempt %d/%d), retrying in %ds...", attempt + 1, retries, wait)
+                        time.sleep(wait)
+                        continue
+                raise  # Re-raise if not a ServerError or all retries exhausted
+
+    analysis_text = _call_gemini(analysis_prompt, analysis_config)
 
     analysis_text = re.sub(r"^```(?:json)?\s*", "", analysis_text)
     analysis_text = re.sub(r"\s*```$", "", analysis_text)
@@ -171,7 +185,6 @@ Sort matched_projects by score descending. Include at most 6 projects."""
             "Return the complete .tex file only. No markdown. No explanation."
         ),
         temperature=0.2,
-        max_output_tokens=16384,  # Cap LaTeX output to prevent unbounded consumption
     )
 
     edit_prompt = f"""Edit the resume below using the analysis and project data provided.
@@ -198,12 +211,7 @@ Rules:
 10. Return the COMPLETE .tex file.
 11. NEVER include \\write18, \\input|, \\openin, \\openout or any file/shell commands."""
 
-    edit_response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=edit_prompt,
-        config=editor_config,
-    )
-    updated_tex = edit_response.text.strip()
+    updated_tex = _call_gemini(edit_prompt, editor_config)
 
     updated_tex = re.sub(r"^```(?:latex|tex)?\s*\n?", "", updated_tex)
     updated_tex = re.sub(r"\n?\s*```$", "", updated_tex)
