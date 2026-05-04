@@ -67,7 +67,15 @@ export default function useResumeFlow() {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/analyze`, { jd, company }, { headers: getHeaders() })
       timers.forEach(clearTimeout)
-      setResult(response.data)
+      
+      // Prepend backend URL to relative paths
+      const resultData = {
+        ...response.data,
+        pdf_url: response.data.pdf_url ? `${API_BASE_URL}${response.data.pdf_url}` : null,
+        tex_url: response.data.tex_url ? `${API_BASE_URL}${response.data.tex_url}` : null,
+      }
+      
+      setResult(resultData)
       addLog(`Analysis complete — Match score: ${response.data.match_score}%`, 'success')
       addLog(`Found ${response.data.top_keywords?.length || 0} keywords, ${response.data.matched_projects?.length || 0} matched projects`, 'success')
       setStep(4)

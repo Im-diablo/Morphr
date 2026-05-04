@@ -17,7 +17,7 @@ from jd_analyzer import analyze_and_edit
 from compiler import compile_to_pdf
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*", "expose_headers": ["Content-Disposition"]}})
 
 RESUMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resumes")
 BASE_RESUME_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resume_base.tex")
