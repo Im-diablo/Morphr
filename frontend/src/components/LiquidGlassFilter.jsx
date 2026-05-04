@@ -157,13 +157,13 @@ const LiquidGlassFilter = ({
     specImage.setAttribute("result", "spec_map");
     filter.appendChild(specImage);
 
-    // Composite blend
-    const composite = document.createElementNS(SVG_NS, "feComposite");
-    composite.setAttribute("in", "spec_map");
-    composite.setAttribute("in2", "displaced");
-    composite.setAttribute("operator", "screen");
-    composite.setAttribute("result", "final");
-    filter.appendChild(composite);
+    // Screen blend (feBlend, not feComposite — "screen" is a blend mode, not a composite operator)
+    const blend = document.createElementNS(SVG_NS, "feBlend");
+    blend.setAttribute("in", "spec_map");
+    blend.setAttribute("in2", "displaced");
+    blend.setAttribute("mode", "screen");
+    blend.setAttribute("result", "final");
+    filter.appendChild(blend);
 
     defs.appendChild(filter);
   }, [id, width, height, generateDisplacementMap, generateSpecularMap]);
