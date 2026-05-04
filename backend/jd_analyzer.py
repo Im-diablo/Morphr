@@ -113,7 +113,7 @@ def analyze_and_edit(jd: str, projects: list, resume_tex: str, api_key: str = No
             "No markdown fences. No explanation."
         ),
         temperature=0.2,
-        max_output_tokens=2048,  # Cap analysis response to prevent unbounded consumption
+        max_output_tokens=8192,  # Analysis JSON needs room for projects + keywords
     )
 
     projects_summary = json.dumps(projects, indent=2, default=str)
