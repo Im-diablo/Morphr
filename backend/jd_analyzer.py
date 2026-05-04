@@ -17,25 +17,18 @@ logger = logging.getLogger(__name__)
 # ── LaTeX Sanitization ────────────────────────────────────────────────
 # These patterns can execute shell commands or read/write arbitrary files
 # when processed by pdflatex/tectonic, even with -no-shell-escape in some
-# edge cases or older versions.
+# These patterns can execute shell commands or arbitrary code.
+# Only includes patterns that are genuinely exploitable — common LaTeX
+# primitives like \read, \write, \catcode, \csname are NOT included
+# because they are used legitimately by standard packages/classes.
 DANGEROUS_LATEX_PATTERNS = [
-    r"\\write18\b",            # Shell command execution
-    r"\\immediate\\write18\b", # Immediate shell execution
-    r"\\input\s*\|",           # Pipe input (shell command)
-    r"\\include\s*\|",         # Pipe include
-    r"\\openin\b",             # Arbitrary file read
-    r"\\openout\b",            # Arbitrary file write
-    r"\\read\b",               # File read primitive
-    r"\\write\b(?!.*\\)",      # File write primitive (but not \writestatus etc.)
-    r"\\newwrite\b",           # Allocate write stream
-    r"\\newread\b",            # Allocate read stream
-    r"\\closein\b",            # Close read stream
-    r"\\closeout\b",           # Close write stream
-    r"\\catcode\b",            # Category code change (can alter parsing)
-    r"\\csname\b.*\\endcsname", # Construct arbitrary command names
-    r"\\directlua\b",         # LuaTeX arbitrary code
-    r"\\luadirect\b",         # LuaTeX arbitrary code
-    r"\\usepackage\{shellesc\}", # Shell escape package
+    r"\\write18\b",                # Shell command execution
+    r"\\immediate\s*\\write18\b",  # Immediate shell execution
+    r"\\input\s*\|",               # Pipe input (shell command)
+    r"\\include\s*\|",             # Pipe include
+    r"\\directlua\b",             # LuaTeX arbitrary code execution
+    r"\\luadirect\b",             # LuaTeX arbitrary code execution
+    r"\\usepackage\{shellesc\}",  # Shell escape package
 ]
 
 _DANGEROUS_RE = re.compile("|".join(DANGEROUS_LATEX_PATTERNS), re.IGNORECASE)
@@ -48,12 +41,12 @@ def sanitize_latex(tex_content: str) -> str:
     looks heavily malicious (multiple dangerous commands).
     """
     matches = _DANGEROUS_RE.findall(tex_content)
-    if len(matches) > 3:
+    if len(matches) > 5:
         raise ValueError(
             f"LaTeX content contains {len(matches)} dangerous commands and was rejected."
         )
     # Remove individual dangerous patterns
-    sanitized = _DANGEROUS_RE.sub("% [SANITIZED — dangerous command removed]", tex_content)
+    sanitized = _DANGEROUS_RE.sub("% [SANITIZED]", tex_content)
     return sanitized
 
 

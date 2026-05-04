@@ -188,9 +188,13 @@ def analyze():
 
     try:
         result = analyze_and_edit(jd, projects, resume_tex, api_key=gemini_key)
+    except ValueError as e:
+        # ValueError = our own validation (sanitizer, JSON schema, missing key)
+        app.logger.warning("Analysis validation error: %s", e)
+        return jsonify({"detail": str(e)}), 400
     except Exception as e:
         app.logger.exception("Gemini analysis failed")
-        return jsonify({"detail": "AI analysis failed. Please check your Gemini API key and try again."}), 500
+        return jsonify({"detail": f"AI analysis failed ({type(e).__name__}). Please check your Gemini API key and try again."}), 500
 
     slug = re.sub(r"[^a-z0-9]+", "_", company.lower()).strip("_") or "untitled"
     output_dir = os.path.join(RESUMES_DIR, slug)
