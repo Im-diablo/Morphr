@@ -101,33 +101,71 @@ const LiquidGlassFilter = ({
     const dispUrl = generateDisplacementMap(width, height);
     const specUrl = generateSpecularMap(width, height);
 
-    if (defsRef.current) {
-      defsRef.current.innerHTML = `
-        <filter id="${id}" x="0%" y="0%" width="100%" height="100%">
-          <!-- Gaussian blur for smoothness -->
-          <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blurred" />
-          
-          <!-- Load displacement map -->
-          <feImage href="${dispUrl}" x="0" y="0" width="${width}" height="${height}" result="disp_map" />
-          
-          <!-- Apply displacement for refraction effect -->
-          <feDisplacementMap
-            in="blurred"
-            in2="disp_map"
-            scale="12"
-            xChannelSelector="R"
-            yChannelSelector="G"
-            result="displaced"
-          />
-          
-          <!-- Load specular map for highlights -->
-          <feImage href="${specUrl}" x="0" y="0" width="${width}" height="${height}" result="spec_map" />
-          
-          <!-- Blend specular highlights with displaced image -->
-          <feComposite in="spec_map" in2="displaced" operator="screen" result="final" />
-        </filter>
-      `;
-    }
+    if (!defsRef.current) return;
+
+    // Security: use DOM API instead of innerHTML to prevent XSS via the id prop
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const defs = defsRef.current;
+
+    // Clear previous content safely
+    while (defs.firstChild) defs.removeChild(defs.firstChild);
+
+    // Sanitize the id to only allow safe characters
+    const safeId = String(id).replace(/[^a-zA-Z0-9_-]/g, "");
+
+    const filter = document.createElementNS(SVG_NS, "filter");
+    filter.setAttribute("id", safeId);
+    filter.setAttribute("x", "0%");
+    filter.setAttribute("y", "0%");
+    filter.setAttribute("width", "100%");
+    filter.setAttribute("height", "100%");
+
+    // Gaussian blur
+    const blur = document.createElementNS(SVG_NS, "feGaussianBlur");
+    blur.setAttribute("in", "SourceGraphic");
+    blur.setAttribute("stdDeviation", "0.8");
+    blur.setAttribute("result", "blurred");
+    filter.appendChild(blur);
+
+    // Displacement map image
+    const dispImage = document.createElementNS(SVG_NS, "feImage");
+    dispImage.setAttribute("href", dispUrl);
+    dispImage.setAttribute("x", "0");
+    dispImage.setAttribute("y", "0");
+    dispImage.setAttribute("width", String(width));
+    dispImage.setAttribute("height", String(height));
+    dispImage.setAttribute("result", "disp_map");
+    filter.appendChild(dispImage);
+
+    // Displacement map filter
+    const dispMap = document.createElementNS(SVG_NS, "feDisplacementMap");
+    dispMap.setAttribute("in", "blurred");
+    dispMap.setAttribute("in2", "disp_map");
+    dispMap.setAttribute("scale", "12");
+    dispMap.setAttribute("xChannelSelector", "R");
+    dispMap.setAttribute("yChannelSelector", "G");
+    dispMap.setAttribute("result", "displaced");
+    filter.appendChild(dispMap);
+
+    // Specular map image
+    const specImage = document.createElementNS(SVG_NS, "feImage");
+    specImage.setAttribute("href", specUrl);
+    specImage.setAttribute("x", "0");
+    specImage.setAttribute("y", "0");
+    specImage.setAttribute("width", String(width));
+    specImage.setAttribute("height", String(height));
+    specImage.setAttribute("result", "spec_map");
+    filter.appendChild(specImage);
+
+    // Composite blend
+    const composite = document.createElementNS(SVG_NS, "feComposite");
+    composite.setAttribute("in", "spec_map");
+    composite.setAttribute("in2", "displaced");
+    composite.setAttribute("operator", "screen");
+    composite.setAttribute("result", "final");
+    filter.appendChild(composite);
+
+    defs.appendChild(filter);
   }, [id, width, height, generateDisplacementMap, generateSpecularMap]);
 
   return (

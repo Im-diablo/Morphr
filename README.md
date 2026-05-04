@@ -58,12 +58,25 @@ Produces ATS-friendly PDF resumes by compiling modified `.tex` files via `pdflat
 </td>
 <td width="50%">
 
-### 🔒 Privacy-First
-No credential storage on backend - API keys stored in browser `localStorage` only
+### 🔒 Security & Privacy
+Zero credential storage (browser-only) plus built-in defenses against LaTeX injection, DoS, and XSS.
 
 </td>
 </tr>
 </table>
+
+---
+
+## 🛡️ Security Posture
+
+Morphr is built with a defense-in-depth approach to ensure user privacy and system integrity:
+
+- **Zero Credential Persistence:** API keys (Gemini, GitHub) are strictly stored in the browser's `localStorage` and sent via headers. The backend is completely stateless regarding credentials.
+- **LaTeX Sandboxing:** Compilation is strictly sandboxed. Shell-escapes (e.g. `\write18`) are disabled via compiler flags, and all AI-generated or uploaded LaTeX is scrubbed for malicious commands to prevent Remote Code Execution (RCE).
+- **Path Traversal Protection:** All file operations are strictly resolved and validated against an isolated directory structure.
+- **Rate Limiting:** Built-in rate limiters (`flask-limiter`) across all API endpoints prevent DoS attacks and protect your API quotas.
+- **Strict CORS Policy:** Cross-Origin Resource Sharing is locked down to verified frontend domains.
+- **XSS Prevention:** The frontend explicitly avoids dangerous DOM operations, utilizing safe SVG and React DOM APIs to prevent cross-site scripting.
 
 ---
 
@@ -94,6 +107,30 @@ npm install
 npm run dev
 ```
 > 🌐 Frontend runs on `http://localhost:5173`
+
+---
+
+## 🌍 Deployment
+
+Morphr is designed for a split-stack deployment: **Render** for the Python backend and **Vercel** for the React frontend.
+
+### 1. Backend (Render)
+The repository includes a `render.yaml` Blueprint for automatic deployment.
+1. Go to [Render](https://render.com) > **New +** > **Blueprint**.
+2. Connect this GitHub repository.
+3. Render will automatically detect the configuration, install LaTeX dependencies, and start the Gunicorn server.
+4. Note the generated backend URL (e.g., `https://morphr-backend.onrender.com`).
+
+### 2. Frontend (Vercel)
+The `frontend` directory includes a `vercel.json` for proper SPA routing.
+1. Go to [Vercel](https://vercel.com) > **Add New Project**.
+2. Import this repository and set the **Root Directory** to `frontend`.
+3. Vercel will auto-detect Vite.
+4. In **Environment Variables**, add:
+   - `VITE_API_BASE_URL`: The URL of your deployed Render backend (e.g., `https://morphr-backend.onrender.com`).
+5. Click **Deploy**.
+
+> **Note:** Ensure your Vercel frontend URL is added to the `ALLOWED_ORIGINS` list in `backend/main.py` to satisfy CORS policies.
 
 ---
 

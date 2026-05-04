@@ -1,12 +1,105 @@
 """
 Job description analyzer — uses Gemini 2.5 Flash for analysis and resume editing.
 Accepts api_key as parameter for per-request key override.
+
+Security: All AI-generated LaTeX is sanitized to strip dangerous commands
+before being written to disk or compiled.
 """
 
 import json
 import re
+import logging
 from google import genai
 from google.genai import types
+
+logger = logging.getLogger(__name__)
+
+# ── LaTeX Sanitization ────────────────────────────────────────────────
+# These patterns can execute shell commands or read/write arbitrary files
+# when processed by pdflatex/tectonic, even with -no-shell-escape in some
+# edge cases or older versions.
+DANGEROUS_LATEX_PATTERNS = [
+    r"\\write18\b",            # Shell command execution
+    r"\\immediate\\write18\b", # Immediate shell execution
+    r"\\input\s*\|",           # Pipe input (shell command)
+    r"\\include\s*\|",         # Pipe include
+    r"\\openin\b",             # Arbitrary file read
+    r"\\openout\b",            # Arbitrary file write
+    r"\\read\b",               # File read primitive
+    r"\\write\b(?!.*\\)",      # File write primitive (but not \writestatus etc.)
+    r"\\newwrite\b",           # Allocate write stream
+    r"\\newread\b",            # Allocate read stream
+    r"\\closein\b",            # Close read stream
+    r"\\closeout\b",           # Close write stream
+    r"\\catcode\b",            # Category code change (can alter parsing)
+    r"\\csname\b.*\\endcsname", # Construct arbitrary command names
+    r"\\directlua\b",         # LuaTeX arbitrary code
+    r"\\luadirect\b",         # LuaTeX arbitrary code
+    r"\\usepackage\{shellesc\}", # Shell escape package
+]
+
+_DANGEROUS_RE = re.compile("|".join(DANGEROUS_LATEX_PATTERNS), re.IGNORECASE)
+
+
+def sanitize_latex(tex_content: str) -> str:
+    """
+    Strip dangerous LaTeX commands from content.
+    Returns the sanitized string. Raises ValueError if the content
+    looks heavily malicious (multiple dangerous commands).
+    """
+    matches = _DANGEROUS_RE.findall(tex_content)
+    if len(matches) > 3:
+        raise ValueError(
+            f"LaTeX content contains {len(matches)} dangerous commands and was rejected."
+        )
+    # Remove individual dangerous patterns
+    sanitized = _DANGEROUS_RE.sub("% [SANITIZED — dangerous command removed]", tex_content)
+    return sanitized
+
+
+def _validate_analysis(data: dict) -> dict:
+    """
+    Validate and normalize the JSON analysis response from Gemini.
+    Returns a safe, well-structured dict even if the AI output is malformed.
+    """
+    # Ensure match_score is an integer 0-100
+    score = data.get("match_score", 0)
+    try:
+        score = int(score)
+    except (ValueError, TypeError):
+        score = 0
+    score = max(0, min(100, score))
+
+    # Ensure lists are actually lists of strings/dicts
+    top_keywords = data.get("top_keywords", [])
+    if not isinstance(top_keywords, list):
+        top_keywords = []
+    top_keywords = [str(k) for k in top_keywords[:20]]  # Cap at 20
+
+    missing_keywords = data.get("missing_keywords", [])
+    if not isinstance(missing_keywords, list):
+        missing_keywords = []
+    missing_keywords = [str(k) for k in missing_keywords[:20]]
+
+    matched_projects = data.get("matched_projects", [])
+    if not isinstance(matched_projects, list):
+        matched_projects = []
+    # Validate each project entry
+    safe_projects = []
+    for proj in matched_projects[:6]:
+        if isinstance(proj, dict):
+            safe_projects.append({
+                "name": str(proj.get("name", "unknown"))[:100],
+                "score": max(0, min(10, int(proj.get("score", 0)) if str(proj.get("score", "0")).isdigit() else 0)),
+                "reason": str(proj.get("reason", ""))[:500],
+            })
+    
+    return {
+        "match_score": score,
+        "top_keywords": top_keywords,
+        "missing_keywords": missing_keywords,
+        "matched_projects": safe_projects,
+    }
 
 
 def analyze_and_edit(jd: str, projects: list, resume_tex: str, api_key: str = None) -> dict:
@@ -27,6 +120,7 @@ def analyze_and_edit(jd: str, projects: list, resume_tex: str, api_key: str = No
             "No markdown fences. No explanation."
         ),
         temperature=0.2,
+        max_output_tokens=2048,  # Cap analysis response to prevent unbounded consumption
     )
 
     projects_summary = json.dumps(projects, indent=2, default=str)
@@ -61,7 +155,18 @@ Sort matched_projects by score descending. Include at most 6 projects."""
     analysis_text = re.sub(r"^```(?:json)?\s*", "", analysis_text)
     analysis_text = re.sub(r"\s*```$", "", analysis_text)
 
-    analysis = json.loads(analysis_text)
+    # Security: validate JSON parsing with proper error handling (#15)
+    try:
+        raw_analysis = json.loads(analysis_text)
+    except json.JSONDecodeError as e:
+        logger.error("Gemini returned invalid JSON for analysis: %s", str(e)[:200])
+        raise ValueError("AI returned malformed analysis. Please try again.")
+
+    if not isinstance(raw_analysis, dict):
+        raise ValueError("AI returned unexpected response format. Please try again.")
+
+    # Validate and normalize the analysis data
+    analysis = _validate_analysis(raw_analysis)
 
     # ── Call 2: LaTeX Edit ────────────────────────────────────────────
     editor_config = types.GenerateContentConfig(
@@ -69,9 +174,11 @@ Sort matched_projects by score descending. Include at most 6 projects."""
             "You are a LaTeX resume editor. "
             "Edit ONLY content between %% EDITABLE:X and %% END:X markers. "
             "Never modify LaTeX commands, preamble, or structure. "
+            "NEVER use \\write18, \\input|, \\openin, \\openout, or any shell-escape commands. "
             "Return the complete .tex file only. No markdown. No explanation."
         ),
         temperature=0.2,
+        max_output_tokens=16384,  # Cap LaTeX output to prevent unbounded consumption
     )
 
     edit_prompt = f"""Edit the resume below using the analysis and project data provided.
@@ -95,7 +202,8 @@ Rules:
 7. Only modify content between %% EDITABLE:X and %% END:X markers.
 8. Keep the final resume to a strict single A4 page.
 9. If the content would overflow, shorten wording, remove lower-priority details, and prefer concise one-line bullets over adding more text.
-10. Return the COMPLETE .tex file."""
+10. Return the COMPLETE .tex file.
+11. NEVER include \\write18, \\input|, \\openin, \\openout or any file/shell commands."""
 
     edit_response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -107,10 +215,13 @@ Rules:
     updated_tex = re.sub(r"^```(?:latex|tex)?\s*\n?", "", updated_tex)
     updated_tex = re.sub(r"\n?\s*```$", "", updated_tex)
 
+    # Security: sanitize AI-generated LaTeX to strip any dangerous commands (#3, #4)
+    updated_tex = sanitize_latex(updated_tex)
+
     return {
-        "match_score": analysis.get("match_score", 0),
-        "top_keywords": analysis.get("top_keywords", []),
-        "missing_keywords": analysis.get("missing_keywords", []),
-        "matched_projects": analysis.get("matched_projects", []),
+        "match_score": analysis["match_score"],
+        "top_keywords": analysis["top_keywords"],
+        "missing_keywords": analysis["missing_keywords"],
+        "matched_projects": analysis["matched_projects"],
         "updated_tex": updated_tex,
     }

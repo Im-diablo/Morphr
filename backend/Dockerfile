@@ -16,8 +16,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Security: run as non-root user
+RUN useradd --create-home appuser && chown -R appuser /app
+USER appuser
+
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["python", "main.py"]
+# Use gunicorn for production instead of Flask dev server
+CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "180"]
