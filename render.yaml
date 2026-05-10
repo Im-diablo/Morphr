@@ -4,6 +4,22 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    # Render free tier: 512 MB RAM, shared CPU, ephemeral disk
+    # The 3-hour TTL on resume files fits perfectly with ephemeral storage.
+    plan: free
     envVars:
       - key: PORT
         value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: FLASK_DEBUG
+        value: false
+      - key: TECTONIC_CACHE_DIR
+        value: /tmp/tectonic-cache
+      # Optional server-side fallback keys (users can override per-request via headers)
+      - key: GEMINI_API_KEY
+        sync: false   # set manually in Render dashboard
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_USERNAME
+        sync: false

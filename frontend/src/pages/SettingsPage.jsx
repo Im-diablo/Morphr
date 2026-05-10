@@ -96,23 +96,24 @@ export default function SettingsPage() {
             {/* GitHub Token */}
             <div className="p-6 rounded-2xl glass-liquid">
               <label className="text-text-dim/60 text-[10px] font-mono uppercase tracking-[0.2em] block mb-3">
-                GitHub Token <span className="text-text-dim/30">(optional)</span>
+                GitHub Token <span className="text-gold">*</span>
               </label>
               <input type="password" value={githubToken} onChange={(e) => setGithubToken(e.target.value)}
                 placeholder="ghp_..." className="w-full px-4 py-3.5 rounded-xl text-sm" />
               <p className="text-text-dim/30 text-[10px] font-mono mt-2">
-                Increases API rate limit from 60 to 5,000 requests/hour. Create a fine-grained token with
-                read-only public repo access.
+                Required to access GitHub data. Create a fine-grained token with read-only public repo access at{' '}
+                <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener noreferrer"
+                  className="text-gold/50 hover:text-gold no-underline transition-colors">github.com/settings/personal-access-tokens</a>.
               </p>
             </div>
 
             {/* Actions */}
             <div className="flex gap-3">
-              <button onClick={save} disabled={!geminiKey.trim() || !githubUsername.trim()}
+              <button onClick={save} disabled={!geminiKey.trim() || !githubUsername.trim() || !githubToken.trim()}
                 className="btn-primary flex-1">
                 {saved ? '✓ Saved' : 'Save Settings'}
               </button>
-              <button onClick={testConnection} disabled={!geminiKey.trim()}
+              <button onClick={testConnection} disabled={!geminiKey.trim() || !githubToken.trim()}
                 className="btn-secondary flex-1">Test Connection</button>
             </div>
 

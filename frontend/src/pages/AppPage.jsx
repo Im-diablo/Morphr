@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Scene from '../components/Scene'
 import StepPanel from '../components/StepPanel'
 import LogPanel from '../components/LogPanel'
+import HistoryPanel from '../components/HistoryPanel'
 import Navbar from '../components/Navbar'
 import useResumeFlow from '../hooks/useResumeFlow'
 
@@ -38,14 +39,25 @@ export default function AppPage() {
       <Scene step={flow.step} />
       <div className="relative z-10 pt-32 pb-16 flex justify-center px-4 md:px-8 min-h-screen">
         <div className="w-full max-w-7xl flex flex-col md:flex-row gap-6">
+
+          {/* ── Main flow panel ───────────────────────────────── */}
           <div className="flex-1 min-w-0">
             <StepPanel flow={flow} />
           </div>
-          {flow.logs.length > 0 && (
-            <div className="w-[380px] flex-shrink-0 hidden lg:block sticky top-32" style={{ alignSelf: 'flex-start' }}>
+
+          {/* ── Right sidebar: Live Log + History ─────────────── */}
+          <div className="w-[360px] flex-shrink-0 hidden lg:flex flex-col gap-4 sticky top-32"
+               style={{ alignSelf: 'flex-start' }}>
+
+            {/* Live log — only shown during/after analysis */}
+            {flow.logs.length > 0 && (
               <LogPanel logs={flow.logs} />
-            </div>
-          )}
+            )}
+
+            {/* History panel — always shown in sidebar */}
+            <HistoryPanel />
+          </div>
+
         </div>
       </div>
     </div>

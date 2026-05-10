@@ -94,7 +94,7 @@ export default function StepPanel({ flow }) {
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="flex flex-col gap-5">
             <div>
               <h2 className="font-heading text-xs uppercase tracking-[0.15em] text-text-dim/70 mb-1">Step 1</h2>
-              <p className="text-text-primary text-sm">Upload your base LaTeX resume</p>
+              <p className="text-text-primary text-sm">Upload your resume <span className="text-text-dim/50 text-[11px] font-mono">.pdf · .docx · .tex</span></p>
             </div>
             <UploadZone onUpload={handleUpload} uploadedFile={resumeFile} error={null} />
             <button id="step1-next-btn" onClick={() => setStep(2)} disabled={!resumeFile} className="btn-primary w-full">Continue</button>

@@ -1,5 +1,5 @@
 """
-Job description analyzer — uses Gemini 2.5 Flash for analysis and resume editing.
+Job description analyzer — uses Gemini 2.5 Flash (gemini-2.5-flash) for analysis and resume editing.
 Accepts api_key as parameter for per-request key override.
 
 Security: All AI-generated LaTeX is sanitized to strip dangerous commands
@@ -105,7 +105,13 @@ def analyze_and_edit(jd: str, projects: list, resume_tex: str, api_key: str = No
     if not api_key:
         raise ValueError("Gemini API key is required. Configure it in Settings.")
 
-    client = genai.Client(api_key=api_key)
+    logger.info(f"Initializing Gemini client with API key: {api_key[:10]}...")
+    
+    try:
+        client = genai.Client(api_key=api_key)
+    except Exception as e:
+        logger.error(f"Failed to initialize Gemini client: {type(e).__name__} - {str(e)}")
+        raise ValueError(f"Invalid Gemini API key: {str(e)}")
 
     # ── Call 1: Analysis ──────────────────────────────────────────────
     analysis_config = types.GenerateContentConfig(
@@ -113,7 +119,7 @@ def analyze_and_edit(jd: str, projects: list, resume_tex: str, api_key: str = No
             "You are a resume expert. Return only valid JSON. "
             "No markdown fences. No explanation."
         ),
-        temperature=0.2,
+        temperature=0.7,
     )
 
     projects_summary = json.dumps(projects, indent=2, default=str)
@@ -142,20 +148,38 @@ Sort matched_projects by score descending. Include at most 6 projects."""
         """Call Gemini with automatic retry on transient ServerErrors."""
         for attempt in range(retries):
             try:
+                logger.info(f"Calling Gemini API (attempt {attempt + 1}/{retries})...")
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=prompt,
                     config=config,
                 )
+                logger.info("Gemini API call successful")
                 return response.text.strip()
             except Exception as e:
-                if "ServerError" in type(e).__name__ or "500" in str(e):
+                error_name = type(e).__name__
+                error_msg = str(e)
+                logger.error(f"Gemini API error (attempt {attempt + 1}/{retries}): {error_name} - {error_msg}")
+                
+                # Retry on server errors
+                if "ServerError" in error_name or "500" in error_msg:
                     if attempt < retries - 1:
                         wait = 2 ** (attempt + 1)  # 2s, 4s, 8s
                         logger.warning("Gemini ServerError (attempt %d/%d), retrying in %ds...", attempt + 1, retries, wait)
                         time.sleep(wait)
                         continue
-                raise  # Re-raise if not a ServerError or all retries exhausted
+                
+                # For client errors, provide more specific feedback
+                if "ClientError" in error_name or "400" in error_msg or "invalid" in error_msg.lower():
+                    if "API key" in error_msg or "authentication" in error_msg.lower() or "api_key" in error_msg.lower():
+                        raise ValueError("Invalid Gemini API key. Please verify your API key at https://aistudio.google.com/apikey")
+                    raise ValueError(f"Gemini API error: {error_msg}")
+                
+                # Handle 404 model not found
+                if "404" in error_msg or "NOT_FOUND" in error_msg:
+                    raise ValueError(f"Model not available. Try updating google-genai package.")
+                
+                raise  # Re-raise if not handled
 
     analysis_text = _call_gemini(analysis_prompt, analysis_config)
 
@@ -180,11 +204,14 @@ Sort matched_projects by score descending. Include at most 6 projects."""
         system_instruction=(
             "You are a LaTeX resume editor. "
             "Edit ONLY content between %% EDITABLE:X and %% END:X markers. "
-            "Never modify LaTeX commands, preamble, or structure. "
+            "CRITICAL: Never modify the document preamble (\\documentclass, \\usepackage, \\definecolor, \\newcommand, \\titleformat, \\titlespacing lines). "
+            "CRITICAL: LaTeX color names are case-sensitive. Always use lowercase: sectioncolor, headercolor, linkcolor. Never write SECTIONCOLOR. "
+            "CRITICAL: Never add \\uppercase inside \\titleformat. "
+            "CRITICAL: Never remove \\newcommand{\\sectionrule} if it exists in the preamble. "
             "NEVER use \\write18, \\input|, \\openin, \\openout, or any shell-escape commands. "
             "Return the complete .tex file only. No markdown. No explanation."
         ),
-        temperature=0.2,
+        temperature=0.7,
     )
 
     edit_prompt = f"""Edit the resume below using the analysis and project data provided.
@@ -209,7 +236,10 @@ Rules:
 8. Keep the final resume to a strict single A4 page.
 9. If the content would overflow, shorten wording, remove lower-priority details, and prefer concise one-line bullets over adding more text.
 10. Return the COMPLETE .tex file.
-11. NEVER include \\write18, \\input|, \\openin, \\openout or any file/shell commands."""
+11. NEVER include \\write18, \\input|, \\openin, \\openout or any file/shell commands.
+12. LaTeX color names are CASE-SENSITIVE. Always keep them lowercase (sectioncolor, headercolor, linkcolor). Never write SECTIONCOLOR.
+13. Never add \\uppercase inside \\titleformat — the existing preamble handles formatting.
+14. Preserve every \\newcommand definition in the preamble exactly as written."""
 
     updated_tex = _call_gemini(edit_prompt, editor_config)
 

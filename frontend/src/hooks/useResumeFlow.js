@@ -71,8 +71,10 @@ export default function useResumeFlow() {
       // Prepend backend URL to relative paths
       const resultData = {
         ...response.data,
-        pdf_url: response.data.pdf_url ? `${API_BASE_URL}${response.data.pdf_url}` : null,
-        tex_url: response.data.tex_url ? `${API_BASE_URL}${response.data.tex_url}` : null,
+        pdf_url:     response.data.pdf_url     ? `${API_BASE_URL}${response.data.pdf_url}`     : null,
+        tex_url:     response.data.tex_url     ? `${API_BASE_URL}${response.data.tex_url}`     : null,
+        docx_url:    response.data.docx_url    ? `${API_BASE_URL}${response.data.docx_url}`    : null,
+        preview_url: response.data.preview_url ? `${API_BASE_URL}${response.data.preview_url}` : null,
       }
       
       setResult(resultData)

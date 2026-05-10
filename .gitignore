@@ -32,6 +32,14 @@ frontend/*.local
 # Resume specific output
 backend/resumes/
 backend/texput.log
+backend/backend.log
+
+# Tectonic portable binaries (downloaded locally, installed via Docker on server)
+backend/tectonic
+backend/tectonic.exe
+
+# Generated output files
+*.docx
 
 # IDEs and Editors
 .vscode/
