@@ -144,7 +144,7 @@ Return a JSON object with exactly this structure:
 
 Sort matched_projects by score descending. Include at most 6 projects."""
 
-    def _call_gemini(prompt, config, retries=3):
+    def _call_gemini(prompt, config, retries=5):
         """Call Gemini with automatic retry on transient ServerErrors."""
         for attempt in range(retries):
             try:
@@ -161,11 +161,15 @@ Sort matched_projects by score descending. Include at most 6 projects."""
                 error_msg = str(e)
                 logger.error(f"Gemini API error (attempt {attempt + 1}/{retries}): {error_name} - {error_msg}")
                 
-                # Retry on server errors
-                if "ServerError" in error_name or "500" in error_msg:
+                # Retry on server errors (500, 503) and rate limits (429)
+                is_transient = any(x in error_name for x in ["ServerError", "TooManyRequests", "APIError"]) or \
+                               any(x in error_msg for x in ["500", "503", "429", "UNAVAILABLE", "high demand"])
+                
+                if is_transient:
                     if attempt < retries - 1:
-                        wait = 2 ** (attempt + 1)  # 2s, 4s, 8s
-                        logger.warning("Gemini ServerError (attempt %d/%d), retrying in %ds...", attempt + 1, retries, wait)
+                        # Exponential backoff: 2s, 4s, 8s, 16s...
+                        wait = 2 ** (attempt + 1)
+                        logger.warning("Gemini transient error (attempt %d/%d), retrying in %ds...", attempt + 1, retries, wait)
                         time.sleep(wait)
                         continue
                 

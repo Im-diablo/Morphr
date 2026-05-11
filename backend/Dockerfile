@@ -18,6 +18,13 @@ RUN curl -fsSL \
     && chmod +x /usr/local/bin/tectonic \
     && tectonic --version
 
+# Pre-cache Tectonic packages so the first request doesn't timeout the Render router
+ENV TECTONIC_CACHE_DIR=/tmp/tectonic-cache
+RUN mkdir -p /tmp/tectonic-cache \
+    && echo "\\documentclass{article}\\begin{document}Hello\\end{document}" > dummy.tex \
+    && tectonic dummy.tex \
+    && rm dummy.*
+
 # ── Python deps ────────────────────────────────────────────────────────────────
 WORKDIR /app
 COPY requirements.txt .
@@ -34,14 +41,14 @@ RUN useradd --create-home --no-log-init appuser \
     && chown -R appuser:appuser /app
 USER appuser
 
-# Tectonic needs a writable cache dir for downloaded packages
+# Set cache dir for the runtime user
 ENV TECTONIC_CACHE_DIR=/tmp/tectonic-cache
 
 EXPOSE 8000
 
-# 2 workers, 180s timeout (Tectonic first-run can take ~10s while downloading fonts)
+# Run Gunicorn with 1 worker to prevent Out-Of-Memory on 512MB free tier, with a long timeout
 CMD ["gunicorn", "main:app", \
      "--bind", "0.0.0.0:8000", \
-     "--workers", "2", \
+     "--workers", "1", \
      "--timeout", "180", \
      "--preload"]

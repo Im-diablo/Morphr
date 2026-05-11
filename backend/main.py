@@ -1,4 +1,4 @@
-﻿"""
+"""
 Flask application â€” Morphr API server.
 All API keys are optional in .env. Users provide them via request headers.
 """
@@ -62,11 +62,16 @@ CORS(app, resources={
     r"/ping": {"origins": ALLOWED_ORIGINS}
 }, supports_credentials=False)
 
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({"detail": f"Rate limit exceeded: {e.description}. You are making too many requests from the same IP."}), 429
+
+
 RESUMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resumes")
 BASE_RESUME_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resume_base.tex")
 os.makedirs(RESUMES_DIR, exist_ok=True)
 
-# â”€â”€ Job ID counter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 _COUNTER_FILE = os.path.join(RESUMES_DIR, "counter.json")
 _counter_lock = threading.Lock()
 
@@ -91,19 +96,14 @@ def _next_job_id() -> int:
 def _session_id(github_token: str, github_username: str, gemini_key: str) -> str:
     """
     Derive a stable, opaque session identifier for a user.
-
-    Priority:
-      1. GitHub personal access token  â€” ideal: tied to a specific GH account.
-      2. github_username + gemini_key  â€” fallback when repo is public (no token).
-
-    We store a SHA-256 hash (first 24 hex chars) so the raw credentials
-    are never written to disk.
     """
-    if github_token and github_token.strip():
-        raw = github_token.strip()
+    if github_token and str(github_token).strip():
+        raw = str(github_token).strip()
     else:
-        # Combine username + Gemini key so it's still unique per person
-        raw = f"{github_username.strip()}:{gemini_key.strip()}"
+        # Fallback: handle None values safely
+        u = str(github_username).strip() if github_username else "anon"
+        k = str(gemini_key).strip() if gemini_key else "anon"
+        raw = f"{u}:{k}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
 
 
